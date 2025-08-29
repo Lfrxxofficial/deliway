@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Deliway</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      background: #1e293b;
+      width: 100%;
+      text-align: center;
+      padding: 1rem;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #38bdf8;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    main {
+      max-width: 800px;
+      width: 90%;
+      margin-top: 2rem;
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 25px rgba(0,0,0,0.6);
+      animation: fadeIn 0.5s ease;
+    }
+    h2 {
+      color: #38bdf8;
+      margin-bottom: 1rem;
+    }
+    textarea, input {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0 1rem 0;
+      border-radius: 0.5rem;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f1f5f9;
+      resize: none;
+      transition: border 0.2s;
+    }
+    textarea:focus, input:focus {
+      border-color: #38bdf8;
+      outline: none;
+    }
+    button {
+      background: #38bdf8;
+      border: none;
+      padding: 0.8rem 1.6rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 0.5rem 0;
+      transition: transform 0.2s, background 0.2s;
+    }
+    button:hover {
+      background: #0ea5e9;
+      transform: scale(1.05);
+    }
+    .items {
+      margin: 1.5rem 0;
+    }
+    .item {
+      background: #0f172a;
+      padding: 0.8rem 1rem;
+      margin: 0.4rem 0;
+      border-radius: 0.6rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    }
+    .item button {
+      background: #ef4444;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.4rem;
+      font-size: 0.8rem;
+    }
+    .summary {
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: 0.8rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+      margin-top: 1rem;
+    }
+    .summary div {
+      display: flex;
+      justify-content: space-between;
+      margin: 0.3rem 0;
+    }
+    .summary .total {
+      font-weight: bold;
+      font-size: 1.3rem;
+      color: #38bdf8;
+    }
+    #result {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #0f172a;
+      border-radius: 0.8rem;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    footer {
+      margin-top: auto;
+      padding: 1rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+    small {
+      display: block;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>Deliway</header>
+  <main>
+    <h2>Add Item</h2>
+    <textarea id="itemInput" placeholder="Paste info copied from shops.alexdevs.me"></textarea>
+    <button onclick="addItem()">Add</button>
+
+    <div class="items" id="itemsList"></div>
+
+    <h2>Delivery Details</h2>
+    <label>Coordinates:</label>
+    <input type="text" id="coords" placeholder="e.g. 123 64 -456">
+    <small>Tip: You can get coordinates by pressing F3 + C in Minecraft</small>
+
+    <label>Address / Nickname:</label>
+    <input type="text" id="address" placeholder="e.g. krystian1325">
+
+    <div class="summary">
+      <div><span>Subtotal:</span> <span id="subtotal">0.00</span> KRO</div>
+      <div><span>Delivery Fee:</span> <span>0.06</span> KRO</div>
+      <div class="total"><span>Total:</span> <span id="total">0.06</span> KRO</div>
+    </div>
+
+    <button onclick="finalize()">Finalize</button>
+
+    <div id="result"></div>
+  </main>
+  <footer>Copyright © Lfrx Studios 2025</footer>
+
+  <script>
+    let items = [];
+    const deliveryFee = 0.06;
+
+    function addItem() {
+      const input = document.getElementById("itemInput").value;
+      const matchItem = input.match(/minecraft:[a-z0-9_]+/);
+      const matchPrice = input.match(/([0-9]*\.?[0-9]+)\s*KRO/);
+
+      if (!matchItem || !matchPrice) {
+        alert("No valid item or price found in the pasted text!");
+        return;
+      }
+
+      const item = matchItem[0];
+      const price = parseFloat(matchPrice[1]);
+      items.push({ name: item, price: price });
+      document.getElementById("itemInput").value = "";
+      renderItems();
+    }
+
+    function removeItem(index) {
+      items.splice(index, 1);
+      renderItems();
+    }
+
+    function renderItems() {
+      const list = document.getElementById("itemsList");
+      list.innerHTML = "";
+      items.forEach((obj, i) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<span>${obj.name} — ${obj.price.toFixed(2)} KRO</span> <button onclick="removeItem(${i})">✖</button>`;
+        list.appendChild(div);
+      });
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const subtotal = items.reduce((sum, obj) => sum + obj.price, 0);
+      const total = subtotal + deliveryFee;
+      document.getElementById("subtotal").innerText = subtotal.toFixed(2);
+      document.getElementById("total").innerText = total.toFixed(2);
+    }
+
+    async function finalize() {
+      if (items.length === 0) {
+        alert("Please add at least 1 item!");
+        return;
+      }
+
+      const coords = document.getElementById("coords").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const subtotal = items.reduce((sum, obj) => sum + obj.price, 0);
+      const total = (subtotal + deliveryFee).toFixed(2);
+
+      // pay command always the same
+      let resultText = `/pay kiev9ql85w ${total}`;
+
+      document.getElementById("result").innerText = resultText;
+
+      // send to Discord webhook
+      const webhookUrl = "https://discord.com/api/webhooks/1411052191401377792/qVlA69Imbq_Nm6IUjJAmoZ0KuBkrm8p25qg7mhP7cB4X7U43Ww1e-vm2aXGVIj9fCjYE";
+      const payload = {
+        content: `📦 New Order!\nItems: ${items.map(obj => `${obj.name} (${obj.price.toFixed(2)} KRO)`).join(", ")}\nCoordinates: ${coords}\nAddress/Nickname: ${address}\nAmount: ${total} KRO (including 0.06 delivery fee)`
+      };
+
+      try {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.error("Webhook error:", e);
+      }
+    }
+  </script>
+</body>
+</html>
